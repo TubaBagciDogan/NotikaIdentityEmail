@@ -17,5 +17,20 @@ namespace NotikaIdentityEmail.Controllers
             var values = _context.Messages.Where(x => x.ReceiverEmail == "ali@gmail.com").ToList();
             return View(values);
         }
+        public IActionResult Sendbox()
+        {
+            var values = _context.Messages.Where(x => x.SenderEmail == "ali@gmail.com").ToList();
+            return View(values);
+        }
+
+        public IActionResult MessageDetail()
+        {
+            var value = _context.Messages.Where(x => x.MessageId == 13).FirstOrDefault();
+            return View(value);
+        }
+        public IActionResult ComposeMessage()
+        {
+            return View();
+        }
     }
 }
