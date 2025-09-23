@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using MailKit.Net.Smtp;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MimeKit;
 using NotikaIdentityEmail.Entities;
 using NotikaIdentityEmail.Models;
 
@@ -22,19 +24,48 @@ namespace NotikaIdentityEmail.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser(RegisterUserViewModel model)
         {
+            Random rnd= new Random();
+            int code= rnd.Next(100000,1000000);
             AppUser appUser = new AppUser()
             {
                 Name = model.Name,
                 Email = model.Email,
                 Surname = model.Surname,
-                UserName = model.Username
+                UserName = model.Username,
+                ActivationCode= code
             };
 
             var result = await _userManager.CreateAsync(appUser, model.Password);
 
             if (result.Succeeded)
             {
-                return RedirectToAction("UserLogin", "Login");
+
+                //Buraya mail kodları gelecek ( ggpz lidf bjgu opuw )
+
+                MimeMessage mimeMessage= new MimeMessage();
+
+                MailboxAddress mailboxAddressFrom = new MailboxAddress("Admin", "dgntuba70@gmail.com");
+                mimeMessage.From.Add(mailboxAddressFrom);
+
+                MailboxAddress mailboxAddressTo = new MailboxAddress("User", model.Email);
+                mimeMessage.To.Add(mailboxAddressTo);
+
+                var bodyBuilder = new BodyBuilder();
+                bodyBuilder.TextBody = "Hesabınız doğrulamak için gerekli olan aktivasyon kodu: " + code;
+                mimeMessage.Body = bodyBuilder.ToMessageBody();
+
+                mimeMessage.Subject = "Notika Identity Aktivasyon Kodu";
+
+                SmtpClient client = new SmtpClient();
+                client.Connect("smtp.gmail.com", 587, false);
+                client.Authenticate("dgntuba70@gmail.com", "ggpz lidf bjgu opuw");
+                client.Send(mimeMessage);
+                client.Disconnect(true);
+
+                TempData["EmailMove"] = model.Email;
+;
+
+                return RedirectToAction("UserActivation", "Activation");
             }
             else
             {
