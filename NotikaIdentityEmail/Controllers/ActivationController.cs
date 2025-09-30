@@ -27,6 +27,9 @@ namespace NotikaIdentityEmail.Controllers
 
             if(userCodeParameter == code)
             {
+                var value = _context.Users.Where(x => x.Email == email).FirstOrDefault();
+                value.EmailConfirmed = true;
+                _context.SaveChanges();
                 return RedirectToAction("UserLogin", "Login");
             }
             return View();

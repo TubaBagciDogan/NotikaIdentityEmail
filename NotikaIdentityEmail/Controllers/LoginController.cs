@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NotikaIdentityEmail.Context;
 using NotikaIdentityEmail.Entities;
 using NotikaIdentityEmail.Models;
 
@@ -8,10 +9,11 @@ namespace NotikaIdentityEmail.Controllers
     public class LoginController : Controller
     {
         private readonly SignInManager<AppUser> _signInManager;
-
-        public LoginController(SignInManager<AppUser> signInManager)
+        private readonly EmailContext _context;
+        public LoginController(SignInManager<AppUser> signInManager, EmailContext context)
         {
             _signInManager = signInManager;
+            _context = context;
         }
 
         [HttpGet]
@@ -22,16 +24,20 @@ namespace NotikaIdentityEmail.Controllers
         [HttpPost]
         public async Task<IActionResult> UserLogin(UserLoginViewModel model)
         {
-            var result= await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, true);
-            if (result.Succeeded)
+            var value = _context.Users.Where(x => x.UserName == model.Username).FirstOrDefault();
+            if (value.EmailConfirmed == true)
             {
-                return RedirectToAction("Profile", "MyProfile");
+                var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, true);
+                if (result.Succeeded)
+                {
+                    return RedirectToAction("Profile", "EditProfile");
+                }
+              return View();
+
             }
-            else
-            {
-                ModelState.AddModelError(" ", "Kullanıcı Adı veya Şifre Hatalı!");
-            }
+
             return View();
+           
         }
     }
 }
