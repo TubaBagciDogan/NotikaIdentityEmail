@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using NotikaIdentityEmail.Entities;
 using NotikaIdentityEmail.Models;
 
@@ -16,6 +17,11 @@ namespace NotikaIdentityEmail.Controllers
             _userManager = userManager;
         }
 
+        public async Task<IActionResult> RoleList()
+        {
+            var values = await _roleManager.Roles.ToListAsync();
+            return View(values);
+        }
 
         [HttpGet]
         public IActionResult CreateRole()
