@@ -25,19 +25,29 @@ namespace NotikaIdentityEmail.Controllers
         public async Task<IActionResult> UserLogin(UserLoginViewModel model)
         {
             var value = _context.Users.Where(x => x.UserName == model.Username).FirstOrDefault();
-            if (value.EmailConfirmed == true)
-            {
-                var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, true);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Profile", "EditProfile");
-                }
-              return View();
 
+            if (value == null)
+            {
+                ModelState.AddModelError(string.Empty, "Kullanıcı bulunamadı.");
+                return View(model);
             }
 
-            return View();
-           
+            if (!value.EmailConfirmed)
+            {
+                ModelState.AddModelError(string.Empty, "Email adresiniz henüz onaylanmamış...");
+                return View(model);
+            }
+
+
+
+            var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, true, true);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("EditProfile", "Profile");
+            }
+            ModelState.AddModelError(string.Empty, "Kullanıcı adı veya şifre yanlış");
+            return View(model);
+
         }
     }
 }
