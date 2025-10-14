@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using NotikaIdentityEmail.Context;
 using NotikaIdentityEmail.Entities;
+using NotikaIdentityEmail.Models.MessageViewModels;
 
 namespace NotikaIdentityEmail.ViewComponents.NavbarHeaderViewComponents
 {
@@ -18,9 +19,22 @@ namespace NotikaIdentityEmail.ViewComponents.NavbarHeaderViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var user = await _userManager.FindByNameAsync(User.Identity.Name);
-            var values = _context.Messages.Where(x => x.ReceiverEmail == user.Email && x.IsRead == false).ToList();
-            return View(values);
+            var userValue = await _userManager.FindByNameAsync(User.Identity.Name);
+            // var values = _context.Messages.Where(x => x.ReceiverEmail == user.Email && x.IsRead == false).ToList();
+            var userEmail = userValue.Email;
+            var values = from message in _context.Messages
+                         join user in _context.Users
+                         on message.SenderEmail equals user.Email
+                         where message.IsRead == false &&  message.ReceiverEmail == userEmail
+                         select new MessageListWithUsersInfoViewModel
+                         {
+                             FullName = user.Name + " " + user.Surname,
+                             ProfileImageUrl = user.ImageUrl,
+                             SendDate = message.SendDate,
+                             MessageDetail = message.MessageDetail
+                         };
+
+            return View(values.ToList());
         }
     }
 }

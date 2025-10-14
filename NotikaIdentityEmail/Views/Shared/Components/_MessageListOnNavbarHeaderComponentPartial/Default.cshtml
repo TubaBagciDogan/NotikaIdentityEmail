@@ -1,4 +1,4 @@
-﻿@model List<Message>
+﻿@model List<MessageListWithUsersInfoViewModel>
 
 
 <li class="nav-item dropdown">
@@ -13,10 +13,10 @@
                 <a href="#">
                     <div class="hd-message-sn">
                         <div class="hd-message-img">
-                            <img src="/userimages/01.jpg/" alt="" />
+                            <img src="@item.ProfileImageUrl" alt="" />
                         </div>
                         <div class="hd-mg-ctn">
-                            <h3>@item.SenderEmail</h3>
+                            <h3>@item.FullName</h3>
                             <p>@item.MessageDetail</p>
                         </div>
                     </div>
