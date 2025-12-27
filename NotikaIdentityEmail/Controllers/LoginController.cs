@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NotikaIdentityEmail.Context;
 using NotikaIdentityEmail.Entities;
 using NotikaIdentityEmail.Models.IdentityModels;
+using System.Security.Claims;
 
 namespace NotikaIdentityEmail.Controllers
 {
@@ -10,10 +11,12 @@ namespace NotikaIdentityEmail.Controllers
     {
         private readonly SignInManager<AppUser> _signInManager;
         private readonly EmailContext _context;
-        public LoginController(SignInManager<AppUser> signInManager, EmailContext context)
+        private readonly UserManager<AppUser> _userManager;
+        public LoginController(SignInManager<AppUser> signInManager, EmailContext context, UserManager<AppUser> userManager)
         {
             _signInManager = signInManager;
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -48,6 +51,51 @@ namespace NotikaIdentityEmail.Controllers
             ModelState.AddModelError(string.Empty, "Kullanıcı adı veya şifre yanlış");
             return View(model);
 
+        }
+        [HttpPost]
+        public IActionResult ExternalLogin(string provider, string? returnUrl= null)
+        {
+            var redirectUrl = Url.Action("ExternalLoginCallBack", "Login", new { returnUrl });
+            var properties= _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+            return Challenge(properties, provider);
+        }
+        [HttpPost]
+        public async Task<IActionResult> ExternalLoginCallBack(string? returnUrl=null, string? remoteError = null)
+        {
+            returnUrl ??= Url.Content("~/");
+            if(remoteError != null)
+            {
+                ModelState.AddModelError("", $"External Provider Error: {remoteError}");
+                return RedirectToAction("Login");
+            }
+
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if(info == null)
+            {
+                return RedirectToAction("Login");
+            }
+            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, false);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("Inbox", "Message");
+            }
+            else
+            {
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                var user = new AppUser()
+                {
+                    UserName = email,
+                    Email = email,
+                };
+                var identityResult= await _userManager.CreateAsync(user);
+                if (identityResult.Succeeded)
+                {
+                    await _userManager.AddLoginAsync(user, info);
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return RedirectToAction("Inbox", "Message");
+                }
+                return RedirectToAction("UserLogin");
+            }
         }
     }
 }

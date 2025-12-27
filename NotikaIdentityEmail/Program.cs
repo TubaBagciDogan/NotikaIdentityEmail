@@ -12,12 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//DbContext ve Identity
 
 builder.Services.AddDbContext<EmailContext>();
 builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<EmailContext>().AddErrorDescriber<CustomIdentityValidator>().AddTokenProvider<DataProtectorTokenProvider<AppUser>>(TokenOptions.DefaultProvider);
 
+// JWT Ayarlarý
 builder.Services.Configure<JwtSettingsModel>(builder.Configuration.GetSection("JwtSettingsKey"));
 
+//Cookie + JWT birlikte Authentication
 
 builder.Services.AddAuthentication(options =>
 {
@@ -44,6 +47,14 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
     };
 });
+
+//Google Authentication Konfigürasyonu
+builder.Services.AddAuthentication()
+    .AddGoogle(options =>
+    {
+        options.ClientId = "Google Client Id Gelecek";
+        options.ClientSecret = "Google Client Secret Deðeri Gelecek";
+    });
 
 builder.Services.AddControllersWithViews();
 
